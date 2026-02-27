@@ -40,3 +40,41 @@ export const getMyAssignments = async (req, res, next) => {
     next(error);
   }
 };
+
+export const getAssignmentById = async (req, res, next) => {
+  try {
+    const { id } = req.params;
+
+    const assignment = await prisma.assignment.findUnique({
+      where: { id },
+      include: {
+        evaluatee: {
+          select: { id: true, empId: true, name: true }
+        },
+        evaluation: {
+          include: {
+            topics: {
+              include: {
+                indicators: true
+              }
+            }
+          }
+        },
+        results: true // ดึงคะแนนเก่าถ้ามี
+      }
+    });
+
+    if (!assignment) {
+      return errorResponse(res, "ไม่พบข้อมูลการมอบหมายงานนี้", 404);
+    }
+
+    // ตรวจสอบสิทธิ์: ผู้ประเมินต้องเป็นเจ้าของงานนี้ หรือเป็น ADMIN
+    if (assignment.evaluatorId !== req.user.id && req.user.role !== 'ADMIN') {
+      return errorResponse(res, "คุณไม่มีสิทธิ์เข้าถึงข้อมูลนี้", 403);
+    }
+
+    return successResponse(res, assignment, "ดึงข้อมูลสำเร็จ");
+  } catch (error) {
+    next(error);
+  }
+};
