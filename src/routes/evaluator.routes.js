@@ -7,7 +7,7 @@ import { authorizeRoles } from "../middlewares/role.middleware.js";
 const router = express.Router();
 
 router.use(authMiddleware);
-router.use(authorizeRoles("Evaluator", "Admin")); // allow admin as well if needed, but normally 'Evaluator'
+router.use(authorizeRoles("EVALUATOR", "ADMIN"));
 
 router.get("/assignments", getMyAssignments);
 router.post("/results", submitResults);
