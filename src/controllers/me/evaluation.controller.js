@@ -16,7 +16,13 @@ export const getMyEvaluations = async (req, res, next) => {
       include: {
         evaluator: { select: { id: true, name: true, empId: true } },
         evaluation: {
-          select: { id: true, name: true, startDate: true, endDate: true },
+          include: {
+            topics: {
+              include: {
+                indicators: true,
+              },
+            },
+          },
         },
         indicatorResults: {
           include: {

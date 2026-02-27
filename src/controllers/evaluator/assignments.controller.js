@@ -49,19 +49,19 @@ export const getAssignmentById = async (req, res, next) => {
       where: { id },
       include: {
         evaluatee: {
-          select: { id: true, empId: true, name: true }
+          select: { id: true, empId: true, name: true },
         },
         evaluation: {
           include: {
             topics: {
               include: {
-                indicators: true
-              }
-            }
-          }
+                indicators: true,
+              },
+            },
+          },
         },
-        results: true // ดึงคะแนนเก่าถ้ามี
-      }
+        indicatorResults: true, // ✅ เปลี่ยนเป็นชื่อนี้ครับ
+      },
     });
 
     if (!assignment) {
@@ -69,7 +69,7 @@ export const getAssignmentById = async (req, res, next) => {
     }
 
     // ตรวจสอบสิทธิ์: ผู้ประเมินต้องเป็นเจ้าของงานนี้ หรือเป็น ADMIN
-    if (assignment.evaluatorId !== req.user.id && req.user.role !== 'ADMIN') {
+    if (assignment.evaluatorId !== req.user.id && req.user.role !== "ADMIN") {
       return errorResponse(res, "คุณไม่มีสิทธิ์เข้าถึงข้อมูลนี้", 403);
     }
 
