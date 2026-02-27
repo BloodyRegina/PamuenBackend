@@ -47,8 +47,55 @@ export const login = async (req, res, next) => {
           department: user.department.name,
         },
       },
-      "Login successful",
+      "Login successful"
     );
+  } catch (error) {
+    next(error);
+  }
+};
+
+export const register = async (req, res, next) => {
+  try {
+    const { empId, name, departmentId, role, email, password } = req.body;
+
+    if (!empId || !name || !departmentId || !role || !email || !password) {
+      return errorResponse(res, "Please provide all required fields", 400);
+    }
+
+    if (role === "ADMIN") {
+      return errorResponse(res, "Cannot register as ADMIN", 403);
+    }
+
+    if (role !== "EVALUATOR" && role !== "EVALUATEE") {
+      return errorResponse(res, "Invalid role context", 400);
+    }
+
+    const existingUser = await prisma.user.findFirst({
+      where: {
+        OR: [{ empId }, { email }],
+      },
+    });
+
+    if (existingUser) {
+      return errorResponse(res, "Employee ID or Email already exists", 409);
+    }
+
+    const hashedPassword = await bcrypt.hash(password, 10);
+
+    const newUser = await prisma.user.create({
+      data: {
+        empId,
+        name,
+        departmentId,
+        role,
+        email,
+        password: hashedPassword,
+      },
+    });
+
+    const { password: _, ...userWithoutPassword } = newUser;
+
+    return successResponse(res, userWithoutPassword, "Registration successful", 201);
   } catch (error) {
     next(error);
   }

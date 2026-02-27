@@ -8,7 +8,7 @@ import adminRoutes from "./routes/admin.routes.js";
 import evaluatorRoutes from "./routes/evaluator.routes.js";
 import meRoutes from "./routes/me.routes.js";
 import reportsRoutes from "./routes/reports.routes.js";
-// We didn't explicitly create system.routes.js but we can add health check later if needed
+import departmentRoutes from "./routes/departments.routes.js";
 
 // Import Middlewares
 import { errorHandler } from "./middlewares/error.middleware.js";
@@ -27,6 +27,7 @@ app.use("/api/admin", adminRoutes);
 app.use("/api/evaluator", evaluatorRoutes);
 app.use("/api/me", meRoutes);
 app.use("/api/reports", reportsRoutes);
+app.use("/api/departments", departmentRoutes);
 
 // Global Error Handler
 app.use(errorHandler);
