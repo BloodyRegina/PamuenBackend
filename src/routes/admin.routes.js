@@ -23,7 +23,7 @@ const router = express.Router();
 
 // Apply auth & role middleares to all admin routes
 router.use(authMiddleware);
-router.use(authorizeRoles("Admin"));
+router.use(authorizeRoles("ADMIN"));
 
 // Users
 router.post("/users", createUser);
