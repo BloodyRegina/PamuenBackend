@@ -41,3 +41,63 @@ export const getEvaluations = async (req, res, next) => {
     next(error);
   }
 };
+
+export const getEvaluationById = async (req, res, next) => {
+  try {
+    const { id } = req.params;
+    const evaluation = await prisma.evaluation.findUnique({
+      where: { id },
+      include: {
+        creator: { select: { name: true } },
+        topics: {
+          include: { indicators: true } // ดึงข้อมูลหัวข้อและตัวชี้วัดมาด้วยเลยสำหรับหน้า Detail
+        }
+      },
+    });
+
+    if (!evaluation) {
+      // สามารถปรับไปใช้ errorResponse ตามที่มีในโปรเจกต์คุณได้เลย
+      return res.status(404).json({ success: false, message: "Evaluation not found" }); 
+    }
+
+    return successResponse(res, evaluation, "Evaluation retrieved successfully");
+  } catch (error) {
+    next(error);
+  }
+};
+
+export const updateEvaluation = async (req, res, next) => {
+  try {
+    const { id } = req.params;
+    const { name, startDate, endDate } = req.body;
+
+    const updateData = {};
+    if (name) updateData.name = name;
+    if (startDate) updateData.startDate = new Date(startDate);
+    if (endDate) updateData.endDate = new Date(endDate);
+
+    const evaluation = await prisma.evaluation.update({
+      where: { id },
+      data: updateData,
+    });
+
+    return successResponse(res, evaluation, "Evaluation updated successfully");
+  } catch (error) {
+    next(error);
+  }
+};
+
+export const deleteEvaluation = async (req, res, next) => {
+  try {
+    const { id } = req.params;
+    
+    // Prisma จะลบข้อมูลใน Topic, Indicator, Assignment, Result ที่เกี่ยวข้องให้ทั้งหมดอัตโนมัติ
+    await prisma.evaluation.delete({
+      where: { id },
+    });
+    
+    return successResponse(res, null, "Evaluation and all related data deleted successfully");
+  } catch (error) {
+    next(error);
+  }
+};

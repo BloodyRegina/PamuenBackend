@@ -67,3 +67,17 @@ export const getAssignments = async (req, res, next) => {
     next(error);
   }
 };
+// เพิ่มต่อท้ายไฟล์เดิม
+export const deleteAssignment = async (req, res, next) => {
+  try {
+    const { id } = req.params;
+    
+    await prisma.assignment.delete({
+      where: { id },
+    });
+
+    return successResponse(res, null, "Assignment deleted successfully");
+  } catch (error) {
+    next(error);
+  }
+};

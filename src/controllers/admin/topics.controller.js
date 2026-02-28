@@ -40,3 +40,33 @@ export const getTopics = async (req, res, next) => {
     next(error);
   }
 };
+export const updateTopic = async (req, res, next) => {
+  try {
+    const { id } = req.params;
+    const { name, description } = req.body;
+    
+    const topic = await prisma.topic.update({
+      where: { id },
+      data: { name, description },
+    });
+
+    return successResponse(res, topic, "Topic updated successfully");
+  } catch (error) {
+    next(error);
+  }
+};
+
+export const deleteTopic = async (req, res, next) => {
+  try {
+    const { id } = req.params;
+    
+    // ลบ Topic (ตัว Indicator และข้อมูลที่เกี่ยวข้องจะถูกลบไปด้วยจาก Cascade Delete ที่เราทำไว้)
+    await prisma.topic.delete({
+      where: { id },
+    });
+
+    return successResponse(res, null, "Topic deleted successfully");
+  } catch (error) {
+    next(error);
+  }
+};

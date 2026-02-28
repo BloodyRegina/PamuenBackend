@@ -11,23 +11,23 @@ datasource db {
 }
 
 model Department {
-  id    String @id @default(auto()) @map("_id") @db.ObjectId
-  name  String
+  id   String @id @default(auto()) @map("_id") @db.ObjectId
+  name String
 
   users User[]
 }
 
 model User {
-  id            String   @id @default(auto()) @map("_id") @db.ObjectId
-  empId         String   @unique
-  name          String
-  departmentId  String   @db.ObjectId
-  role          String
-  email         String   @unique
-  password      String
-  createdAt     DateTime @default(now())
+  id           String   @id @default(auto()) @map("_id") @db.ObjectId
+  empId        String   @unique
+  name         String
+  departmentId String   @db.ObjectId
+  role         String
+  email        String   @unique
+  password     String
+  createdAt    DateTime @default(now())
 
-  department    Department @relation(fields: [departmentId], references: [id])
+  department Department @relation(fields: [departmentId], references: [id])
 
   createdEvaluations Evaluation[] @relation("EvaluationCreator")
   createdTopics      Topic[]      @relation("TopicCreator")
@@ -53,30 +53,32 @@ model Evaluation {
 }
 
 model Topic {
-  id            String   @id @default(auto()) @map("_id") @db.ObjectId
-  evaluationId  String   @db.ObjectId
-  name          String
-  description   String
-  createdBy     String   @db.ObjectId
-  createdAt     DateTime @default(now())
+  id           String   @id @default(auto()) @map("_id") @db.ObjectId
+  evaluationId String   @db.ObjectId
+  name         String
+  description  String
+  createdBy    String   @db.ObjectId
+  createdAt    DateTime @default(now())
 
-  evaluation Evaluation @relation(fields: [evaluationId], references: [id])
+  // เพิ่ม onDelete: Cascade ที่ evaluation
+  evaluation Evaluation @relation(fields: [evaluationId], references: [id], onDelete: Cascade)
   creator    User       @relation("TopicCreator", fields: [createdBy], references: [id])
 
   indicators Indicator[]
 }
 
 model Indicator {
-  id               String   @id @default(auto()) @map("_id") @db.ObjectId
-  topicId          String   @db.ObjectId
-  name             String
-  description      String
-  indicatorType    String
-  requireEvidence  Boolean
-  weight           Float
-  createdAt        DateTime @default(now())
+  id              String   @id @default(auto()) @map("_id") @db.ObjectId
+  topicId         String   @db.ObjectId
+  name            String
+  description     String
+  indicatorType   String
+  requireEvidence Boolean
+  weight          Float
+  createdAt       DateTime @default(now())
 
-  topic Topic @relation(fields: [topicId], references: [id])
+  // เพิ่ม onDelete: Cascade ที่ topic
+  topic Topic @relation(fields: [topicId], references: [id], onDelete: Cascade)
 
   results   IndicatorResult[]
   evidences IndicatorEvidence[]
@@ -90,7 +92,8 @@ model Assignment {
   status       String   @default("PENDING")
   createdAt    DateTime @default(now())
 
-  evaluation Evaluation @relation(fields: [evaluationId], references: [id])
+  // เพิ่ม onDelete: Cascade ที่ evaluation
+  evaluation Evaluation @relation(fields: [evaluationId], references: [id], onDelete: Cascade)
 
   evaluator User @relation("Evaluator", fields: [evaluatorId], references: [id])
   evaluatee User @relation("Evaluatee", fields: [evaluateeId], references: [id])
@@ -105,17 +108,19 @@ model IndicatorResult {
   score        Int
   createdAt    DateTime @default(now())
 
-  indicator  Indicator  @relation(fields: [indicatorId], references: [id])
-  assignment Assignment @relation(fields: [assignmentId], references: [id])
+  // เพิ่ม onDelete: Cascade ทั้งสองตัว
+  indicator  Indicator  @relation(fields: [indicatorId], references: [id], onDelete: Cascade)
+  assignment Assignment @relation(fields: [assignmentId], references: [id], onDelete: Cascade)
 }
 
 model IndicatorEvidence {
-  id           String   @id @default(auto()) @map("_id") @db.ObjectId
-  indicatorId  String   @db.ObjectId
-  evaluateeId  String   @db.ObjectId
-  filename     String
-  createdAt    DateTime @default(now())
+  id          String   @id @default(auto()) @map("_id") @db.ObjectId
+  indicatorId String   @db.ObjectId
+  evaluateeId String   @db.ObjectId
+  filename    String
+  createdAt   DateTime @default(now())
 
-  indicator Indicator @relation(fields: [indicatorId], references: [id])
+  // เพิ่ม onDelete: Cascade ที่ indicator
+  indicator Indicator @relation(fields: [indicatorId], references: [id], onDelete: Cascade)
   evaluatee User      @relation(fields: [evaluateeId], references: [id])
 }
