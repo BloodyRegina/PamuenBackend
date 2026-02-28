@@ -6,19 +6,33 @@ export const createIndicator = async (req, res, next) => {
     const { topicId, name, description, indicatorType, requireEvidence, weight } = req.body;
     const newWeight = parseFloat(weight);
 
-    // ให้ Prisma รวมค่าน้ำหนักเดิมทั้งหมดใน Topic นี้มาให้
+    // 1. ดึงข้อมูล Topic ปัจจุบันเพื่อให้ทราบว่าอยู่ในการประเมิน (Evaluation) ใด
+    const topic = await prisma.topic.findUnique({
+      where: { id: topicId },
+      select: { evaluationId: true }
+    });
+
+    if (!topic) {
+      return res.status(404).json({ success: false, message: "ไม่พบหัวข้อประเมิน (Topic)" });
+    }
+
+    // 2. ให้ Prisma รวมค่าน้ำหนักเดิมทั้งหมดของการประเมินนี้ (ทุก Topic ที่อยู่ใต้ evaluationId เดียวกัน)
     const aggregate = await prisma.indicator.aggregate({
-      where: { topicId },
+      where: { 
+        topic: {
+          evaluationId: topic.evaluationId
+        }
+      },
       _sum: { weight: true }
     });
 
     const currentTotalWeight = aggregate._sum.weight || 0;
 
-    // ตรวจสอบว่า ถ้าน้ำหนักเดิม + น้ำหนักใหม่ เกิน 100 ให้ตีกลับทันที
+    // 3. ตรวจสอบว่า ถ้าน้ำหนักเดิม + น้ำหนักใหม่ เกิน 100 ให้ตีกลับทันที
     if (currentTotalWeight + newWeight > 100) {
       return res.status(400).json({
         success: false,
-        message: `ไม่สามารถเพิ่มตัวชี้วัดได้ เนื่องจากน้ำหนักรวมจะเกิน 100% (ปัจจุบันมีอยู่ ${currentTotalWeight}%, กำลังจะเพิ่มอีก ${newWeight}%)`
+        message: `ไม่สามารถเพิ่มตัวชี้วัดได้ เนื่องจากน้ำหนักรวมของการประเมินจะเกิน 100% (ปัจจุบันมีอยู่ ${currentTotalWeight}%, กำลังจะเพิ่มอีก ${newWeight}%)`
       });
     }
 
@@ -61,23 +75,32 @@ export const getIndicators = async (req, res, next) => {
     next(error);
   }
 };
-// เพิ่มต่อท้ายไฟล์เดิม
+
 export const updateIndicator = async (req, res, next) => {
   try {
     const { id } = req.params;
     const { name, description, indicatorType, requireEvidence, weight } = req.body;
 
-    // ถ้ามีการส่งค่าน้ำหนักมาเพื่ออัปเดต ต้องเช็คผลรวมด้วย
+    // ถ้ามีการส่งค่าน้ำหนักมาเพื่ออัปเดต ต้องเช็กผลรวมด้วย
     if (weight !== undefined) {
       const newWeight = parseFloat(weight);
       
-      // ดึงข้อมูลตัวชี้วัดปัจจุบันเพื่อหาว่าอยู่ใน Topic ไหน
-      const currentIndicator = await prisma.indicator.findUnique({ where: { id } });
+      // 1. ดึงข้อมูลตัวชี้วัดปัจจุบัน พร้อมดึง topic.evaluationId มาด้วย
+      const currentIndicator = await prisma.indicator.findUnique({ 
+        where: { id },
+        include: { topic: { select: { evaluationId: true } } }
+      });
+
+      if (!currentIndicator) {
+        return res.status(404).json({ success: false, message: "ไม่พบตัวชี้วัดนี้" });
+      }
       
-      // ให้ Prisma รวมค่าน้ำหนักใน Topic นี้ **โดยยกเว้นค่าน้ำหนักของตัวเองที่กำลังจะถูกแก้**
+      // 2. ให้ Prisma รวมค่าน้ำหนักใน Evaluation นี้ทั้งหมด **โดยยกเว้นค่าน้ำหนักของตัวเองที่กำลังจะถูกแก้**
       const aggregate = await prisma.indicator.aggregate({
         where: { 
-          topicId: currentIndicator.topicId,
+          topic: {
+            evaluationId: currentIndicator.topic.evaluationId
+          },
           id: { not: id } 
         },
         _sum: { weight: true }
@@ -88,7 +111,7 @@ export const updateIndicator = async (req, res, next) => {
       if (otherTotalWeight + newWeight > 100) {
         return res.status(400).json({
           success: false,
-          message: `แก้ไขน้ำหนักไม่สำเร็จ! รวมแล้วเกิน 100% (ข้ออื่นๆ รวมกันได้ ${otherTotalWeight}%, คุณพยายามใส่ ${newWeight}%)`
+          message: `แก้ไขน้ำหนักไม่สำเร็จ! รวมแล้วน้ำหนักทั้งการประเมินจะเกิน 100% (ข้ออื่นๆ รวมกันได้ ${otherTotalWeight}%, คุณพยายามใส่ ${newWeight}%)`
         });
       }
     }
