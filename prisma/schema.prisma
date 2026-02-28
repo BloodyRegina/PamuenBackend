@@ -87,6 +87,7 @@ model Assignment {
   evaluationId String   @db.ObjectId
   evaluatorId  String   @db.ObjectId
   evaluateeId  String   @db.ObjectId
+  status       String   @default("PENDING")
   createdAt    DateTime @default(now())
 
   evaluation Evaluation @relation(fields: [evaluationId], references: [id])

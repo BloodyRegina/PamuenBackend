@@ -23,7 +23,6 @@ export const submitResults = async (req, res, next) => {
     }
 
     // Process logic to delete old results to replace, or use upsert.
-    // Here we can simply delete all existing results and insert new ones or insert if don't exist
     await prisma.indicatorResult.deleteMany({
       where: { assignmentId },
     });
@@ -36,6 +35,10 @@ export const submitResults = async (req, res, next) => {
 
     await prisma.indicatorResult.createMany({
       data: dataPayload,
+    });
+    await prisma.assignment.update({
+      where: { id: assignmentId },
+      data: { status: 'COMPLETED' },
     });
 
     return successResponse(

@@ -4,40 +4,26 @@ import { successResponse, errorResponse } from "../../utils/response.js";
 export const getMyEvaluations = async (req, res, next) => {
   try {
     const evaluateeId = req.user.id;
-    const { evaluationId } = req.query;
-
-    const where = { evaluateeId };
-    if (evaluationId) {
-      where.evaluationId = evaluationId;
-    }
-
     const assignments = await prisma.assignment.findMany({
-      where,
+      where: { evaluateeId },
       include: {
-        evaluator: { select: { id: true, name: true, empId: true } },
+        evaluator: {
+          select: { id: true, name: true, empId: true, role: true }
+        },
         evaluation: {
           include: {
             topics: {
               include: {
-                indicators: true,
-              },
-            },
-          },
+                indicators: true
+              }
+            }
+          }
         },
-        indicatorResults: {
-          include: {
-            indicator: true,
-            
-          },
-        },
-      },
+        indicatorResults: true
+      }
     });
 
-    return successResponse(
-      res,
-      assignments,
-      "Your evaluations retrieved successfully",
-    );
+    return successResponse(res, assignments, "ดึงข้อมูลการประเมินของคุณสำเร็จ");
   } catch (error) {
     next(error);
   }
