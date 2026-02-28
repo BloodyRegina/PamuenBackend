@@ -27,6 +27,7 @@ export const getMyEvaluations = async (req, res, next) => {
         indicatorResults: {
           include: {
             indicator: true,
+            
           },
         },
       },
