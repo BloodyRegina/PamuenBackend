@@ -52,8 +52,9 @@ export const getAssignments = async (req, res, next) => {
     const assignments = await prisma.assignment.findMany({
       where,
       include: {
-        evaluator: { select: { name: true, empId: true } },
+        evaluator: { select: { name: true, empId: true, role: true } },
         evaluatee: { select: { name: true, empId: true } },
+        indicatorResults: true, // ✅ เพิ่มบรรทัดนี้เพื่อดึงผลคะแนน
       },
     });
 

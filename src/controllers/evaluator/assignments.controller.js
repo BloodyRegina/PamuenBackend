@@ -49,7 +49,7 @@ export const getAssignmentById = async (req, res, next) => {
       where: { id },
       include: {
         evaluatee: {
-          select: { id: true, empId: true, name: true },
+          select: { id: true, empId: true, name: true, evidences: true },
         },
         evaluation: {
           include: {
