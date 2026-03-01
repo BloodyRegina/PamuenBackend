@@ -10,6 +10,23 @@ datasource db {
   url      = env("DATABASE_URL")
 }
 
+enum Role {
+  ADMIN
+  EVALUATOR
+  EVALUATEE
+}
+
+enum IndicatorType {
+  SCALE_1_4
+  YES_NO
+}
+
+enum EvaluationStatus {
+  DRAFT
+  OPEN
+  CLOSED
+}
+
 model Department {
   id   String @id @default(auto()) @map("_id") @db.ObjectId
   name String
@@ -22,7 +39,7 @@ model User {
   empId        String   @unique
   name         String
   departmentId String   @db.ObjectId
-  role         String
+  role         Role
   email        String   @unique
   password     String
   createdAt    DateTime @default(now())
@@ -43,6 +60,7 @@ model Evaluation {
   name      String
   startDate DateTime
   endDate   DateTime
+  status    EvaluationStatus @default(DRAFT)
   createdBy String   @db.ObjectId
   createdAt DateTime @default(now())
 
@@ -72,7 +90,7 @@ model Indicator {
   topicId         String   @db.ObjectId
   name            String
   description     String
-  indicatorType   String
+  indicatorType   IndicatorType
   requireEvidence Boolean
   weight          Float
   createdAt       DateTime @default(now())
@@ -99,6 +117,8 @@ model Assignment {
   evaluatee User @relation("Evaluatee", fields: [evaluateeId], references: [id])
 
   indicatorResults IndicatorResult[]
+
+  @@unique([evaluationId, evaluatorId, evaluateeId])
 }
 
 model IndicatorResult {
@@ -118,9 +138,14 @@ model IndicatorEvidence {
   indicatorId String   @db.ObjectId
   evaluateeId String   @db.ObjectId
   filename    String
+  filePath    String
+  mimeType    String
+  sizeBytes   Int
   createdAt   DateTime @default(now())
 
   // เพิ่ม onDelete: Cascade ที่ indicator
   indicator Indicator @relation(fields: [indicatorId], references: [id], onDelete: Cascade)
   evaluatee User      @relation(fields: [evaluateeId], references: [id])
+
+  @@unique([indicatorId, evaluateeId])
 }

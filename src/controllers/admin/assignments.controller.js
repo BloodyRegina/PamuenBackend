@@ -36,6 +36,9 @@ export const createAssignment = async (req, res, next) => {
       201,
     );
   } catch (error) {
+    if (error.code === "P2002") {
+      return res.status(409).json({ success: false, message: "DUPLICATE_ASSIGNMENT" });
+    }
     next(error);
   }
 };

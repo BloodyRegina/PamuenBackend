@@ -9,6 +9,7 @@ import adminRoutes from "./routes/admin.routes.js";
 import evaluatorRoutes from "./routes/evaluator.routes.js";
 import meRoutes from "./routes/me.routes.js";
 import departmentRoutes from "./routes/departments.routes.js";
+import reportRoutes from "./routes/reports.routes.js";
 
 // Import Middlewares
 import { errorHandler } from "./middlewares/error.middleware.js";
@@ -28,6 +29,7 @@ app.use("/api/admin", adminRoutes);
 app.use("/api/evaluator", evaluatorRoutes);
 app.use("/api/me", meRoutes);
 app.use("/api/departments", departmentRoutes);
+app.use("/api/reports", reportRoutes);
 
 // Global Error Handler
 app.use(errorHandler);

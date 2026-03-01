@@ -69,12 +69,18 @@ export const getEvaluationById = async (req, res, next) => {
 export const updateEvaluation = async (req, res, next) => {
   try {
     const { id } = req.params;
-    const { name, startDate, endDate } = req.body;
+    const { name, startDate, endDate, status } = req.body;
 
     const updateData = {};
     if (name) updateData.name = name;
     if (startDate) updateData.startDate = new Date(startDate);
     if (endDate) updateData.endDate = new Date(endDate);
+    if (status) {
+      if (!["DRAFT", "OPEN", "CLOSED"].includes(status)) {
+        return res.status(400).json({ success: false, message: "Invalid status. Must be DRAFT, OPEN, or CLOSED" });
+      }
+      updateData.status = status;
+    }
 
     const evaluation = await prisma.evaluation.update({
       where: { id },

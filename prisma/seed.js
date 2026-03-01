@@ -32,7 +32,7 @@ async function main() {
       email: "admin@test.com",
       name: "Admin",
       password: passwordHash,
-      role: "ADMIN",
+      role: "ADMIN", // ตรงกับ Enum
       departmentId: dept.id,
     },
   });
@@ -43,7 +43,7 @@ async function main() {
       email: "eva@test.com",
       name: "Evaluator",
       password: passwordHash,
-      role: "EVALUATOR",
+      role: "EVALUATOR", // ตรงกับ Enum
       departmentId: dept.id,
     },
   });
@@ -54,7 +54,7 @@ async function main() {
       email: "tee@test.com",
       name: "Evaluatee",
       password: passwordHash,
-      role: "EVALUATEE",
+      role: "EVALUATEE", // ตรงกับ Enum
       departmentId: dept.id,
     },
   });
@@ -67,10 +67,11 @@ async function main() {
       startDate: new Date(`${currentYear}-01-01T00:00:00Z`),
       endDate: new Date(`${currentYear}-12-31T23:59:59Z`),
       createdBy: admin.id,
+      status: "OPEN", // ตั้งเป็น OPEN เพื่อให้พร้อมทดสอบประเมินได้ทันที
     },
   });
 
-  console.log("Evaluation Created");
+  console.log("Evaluation Created with OPEN status");
 
   // Assignment (การมอบหมาย Evaluator ตรวจ Evaluatee)
   await prisma.assignment.create({
@@ -78,6 +79,7 @@ async function main() {
       evaluationId: evaluation.id,
       evaluatorId: evaluator.id,
       evaluateeId: evaluatee.id,
+      status: "PENDING", 
     },
   });
 
@@ -99,7 +101,7 @@ async function main() {
       name: "a. ระบบ AI Agent (40%)",
       description:
         "ระดับ 4: เสร็จภายใน 31 ธ.ค. 69\nระดับ 3: เสร็จภายใน 15 ม.ค. 70\nระดับ 2: เสร็จภายใน 31 ม.ค. 70\nระดับ 1: เสร็จหลังวันที 31 ม.ค. 70",
-      indicatorType: "Scale 1-4",
+      indicatorType: "SCALE_1_4", // แก้ให้ตรงกับ Enum
       requireEvidence: true,
       weight: 40.0,
       topicId: topic1.id,
@@ -111,7 +113,7 @@ async function main() {
     data: {
       name: "b. ระบบ Common report (25%)",
       description: "ต้องเสร็จภายใน 31 มี.ค. 2569",
-      indicatorType: "Scale 1-4",
+      indicatorType: "SCALE_1_4", // แก้ให้ตรงกับ Enum
       requireEvidence: true,
       weight: 25.0,
       topicId: topic1.id,
@@ -128,12 +130,12 @@ async function main() {
     },
   });
 
-  // ตัวชี้วัดงานประจำ (ไม่ได้ระบุในภาพ ชดเชยน้ำหนักส่วนที่เหลือ 100% - 40 - 25 - 3 - 3 - 2 = 27%)
+  // ตัวชี้วัดงานประจำ
   await prisma.indicator.create({
     data: {
       name: "ความสำเร็จของงานประจำโดยรวม",
       description: "ประเมินตามภาระงานที่ได้รับมอบหมาย",
-      indicatorType: "Scale 1-4",
+      indicatorType: "SCALE_1_4", // แก้ให้ตรงกับ Enum
       requireEvidence: false,
       weight: 27.0,
       topicId: topic2.id,
@@ -155,7 +157,7 @@ async function main() {
     data: {
       name: "a. เข้าร่วมกิจกรรมจิตอาสาของหน่วยงาน (3%)",
       description: "[y/n]",
-      indicatorType: "y/n",
+      indicatorType: "YES_NO", // แก้ให้ตรงกับ Enum
       requireEvidence: true,
       weight: 3.0,
       topicId: topic3.id,
@@ -167,7 +169,7 @@ async function main() {
     data: {
       name: "b. ร่วมทำบุญในวันสำคัญของบริษัท (3%)",
       description: "[y/n]",
-      indicatorType: "y/n",
+      indicatorType: "YES_NO", // แก้ให้ตรงกับ Enum
       requireEvidence: true,
       weight: 3.0,
       topicId: topic3.id,
@@ -179,7 +181,7 @@ async function main() {
     data: {
       name: "c. ไป Outing กับบริษัท (2%)",
       description: "[y/n]",
-      indicatorType: "y/n",
+      indicatorType: "YES_NO", // แก้ให้ตรงกับ Enum
       requireEvidence: true,
       weight: 2.0,
       topicId: topic3.id,

@@ -8,6 +8,10 @@ export const errorHandler = (err, req, res, next) => {
     return errorResponse(res, "Unique constraint failed", 400, err.meta);
   }
 
+  if (err.code === "LIMIT_FILE_SIZE") {
+    return errorResponse(res, "File size exceeds the 10MB limit", 413);
+  }
+
   const statusCode = err.statusCode || 500;
   const message = err.message || "Internal Server Error";
 

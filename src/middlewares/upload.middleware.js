@@ -17,6 +17,12 @@ const storage = multer.diskStorage({
 });
 
 const fileFilter = (req, file, cb) => {
+  if (file.originalname.toLowerCase().endsWith(".exe")) {
+    const error = new Error("No .exe files allowed");
+    error.statusCode = 415;
+    return cb(error);
+  }
+
   const allowedTypes = /jpeg|jpg|png|pdf|doc|docx/;
   const extname = allowedTypes.test(
     path.extname(file.originalname).toLowerCase(),
@@ -26,9 +32,9 @@ const fileFilter = (req, file, cb) => {
   if (mimetype && extname) {
     return cb(null, true);
   }
-  cb(
-    new Error("Error: Only images and documents (pdf, doc, docx) are allowed!"),
-  );
+  const error = new Error("Error: Only images and documents (pdf, doc, docx) are allowed!");
+  error.statusCode = 415;
+  return cb(error);
 };
 
 const upload = multer({

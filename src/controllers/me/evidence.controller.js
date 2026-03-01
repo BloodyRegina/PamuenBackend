@@ -16,42 +16,28 @@ export const uploadEvidence = async (req, res, next) => {
 
     const filename = req.file.filename;
 
-    // 1. ค้นหาว่าเคยมีการอัปโหลดไฟล์สำหรับตัวชี้วัดข้อนี้ไปแล้วหรือยัง
-    const existingEvidence = await prisma.indicatorEvidence.findFirst({
-      where: {
-        indicatorId,
-        evaluateeId,
-      },
-    });
-
-    if (existingEvidence) {
-      // 2. ถ้ามีไฟล์เก่า ให้ทำการลบไฟล์เก่าออกจากโฟลเดอร์ uploads (Physical Delete)
-      const oldFilePath = path.join(process.cwd(), "uploads", existingEvidence.filename);
-      
-      if (fs.existsSync(oldFilePath)) {
-        fs.unlinkSync(oldFilePath); // ลบไฟล์เก่าทิ้ง
-      }
-
-      // 3. อัปเดต Database ให้ชี้ไปที่ชื่อไฟล์ใหม่
-      const updatedEvidence = await prisma.indicatorEvidence.update({
-        where: { id: existingEvidence.id },
-        data: { filename },
-      });
-
-      return successResponse(res, updatedEvidence, "Evidence updated and old file replaced successfully", 200);
-    }
-
-    // 4. กรณีที่ยังไม่เคยอัปโหลด ให้สร้างเรคคอร์ดใหม่
     const evidence = await prisma.indicatorEvidence.create({
       data: {
         indicatorId,
         evaluateeId,
         filename,
+        filePath: req.file.path,
+        mimeType: req.file.mimetype,
+        sizeBytes: req.file.size,
       },
     });
 
     return successResponse(res, evidence, "Evidence uploaded successfully", 201);
   } catch (error) {
+    if (error.code === "P2002") {
+      if (req.file && fs.existsSync(req.file.path)) {
+        fs.unlinkSync(req.file.path);
+      }
+      return res.status(409).json({ 
+        success: false, 
+        message: "Conflict: ผู้รับการประเมินรายนี้ได้ส่งหลักฐานสำหรับตัวชี้วัดนี้ไปแล้ว" 
+      });
+    }
     next(error);
   }
 };

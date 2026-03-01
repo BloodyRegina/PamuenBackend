@@ -6,6 +6,10 @@ export const createIndicator = async (req, res, next) => {
     const { topicId, name, description, indicatorType, requireEvidence, weight } = req.body;
     const newWeight = parseFloat(weight);
 
+    if (!["SCALE_1_4", "YES_NO"].includes(indicatorType)) {
+      return res.status(400).json({ success: false, message: "Invalid indicatorType. Must be SCALE_1_4 or YES_NO" });
+    }
+
     // 1. ดึงข้อมูล Topic ปัจจุบันเพื่อให้ทราบว่าอยู่ในการประเมิน (Evaluation) ใด
     const topic = await prisma.topic.findUnique({
       where: { id: topicId },
@@ -80,6 +84,10 @@ export const updateIndicator = async (req, res, next) => {
   try {
     const { id } = req.params;
     const { name, description, indicatorType, requireEvidence, weight } = req.body;
+
+    if (indicatorType && !["SCALE_1_4", "YES_NO"].includes(indicatorType)) {
+      return res.status(400).json({ success: false, message: "Invalid indicatorType. Must be SCALE_1_4 or YES_NO" });
+    }
 
     // ถ้ามีการส่งค่าน้ำหนักมาเพื่ออัปเดต ต้องเช็กผลรวมด้วย
     if (weight !== undefined) {
