@@ -1,0 +1,763 @@
+openapi: 3.0.0
+info:
+  title: Pamuen Evaluation System API
+  description: Backend API Documentation for Pamuen Employee Evaluation System
+  version: 1.0.0
+servers:
+  - url: http://localhost:4000/api
+    description: Local development server
+components:
+  securitySchemes:
+    bearerAuth:
+      type: http
+      scheme: bearer
+      bearerFormat: JWT
+      description: JWT Authorization header using the Bearer scheme.
+  schemas:
+    User:
+      type: object
+      properties:
+        id:
+          type: string
+          format: uuid
+        empId:
+          type: string
+        name:
+          type: string
+        role:
+          type: string
+          enum: [ADMIN, EVALUATOR, EVALUATEE]
+        email:
+          type: string
+          format: email
+        department:
+          type: object
+          properties:
+            id:
+              type: string
+            name:
+              type: string
+    Evaluation:
+      type: object
+      properties:
+        id:
+          type: string
+          format: uuid
+        name:
+          type: string
+        startDate:
+          type: string
+          format: date-time
+        endDate:
+          type: string
+          format: date-time
+        status:
+          type: string
+          enum: [DRAFT, OPEN, CLOSED]
+        createdBy:
+          type: string
+          format: uuid
+    Topic:
+      type: object
+      properties:
+        id:
+          type: string
+          format: uuid
+        evaluationId:
+          type: string
+          format: uuid
+        name:
+          type: string
+        description:
+          type: string
+    Indicator:
+      type: object
+      properties:
+        id:
+          type: string
+          format: uuid
+        topicId:
+          type: string
+          format: uuid
+        name:
+          type: string
+        description:
+          type: string
+        indicatorType:
+          type: string
+          enum: [SCALE_1_4, YES_NO]
+        requireEvidence:
+          type: boolean
+        weight:
+          type: number
+    Assignment:
+      type: object
+      properties:
+        id:
+          type: string
+          format: uuid
+        evaluationId:
+          type: string
+          format: uuid
+        evaluatorId:
+          type: string
+          format: uuid
+        evaluateeId:
+          type: string
+          format: uuid
+        status:
+          type: string
+          enum: [PENDING, COMPLETED]
+    Evidence:
+      type: object
+      properties:
+        id:
+          type: string
+          format: uuid
+        indicatorId:
+          type: string
+          format: uuid
+        evaluateeId:
+          type: string
+          format: uuid
+        filename:
+          type: string
+        filePath:
+          type: string
+        mimeType:
+          type: string
+        sizeBytes:
+          type: integer
+    Department:
+      type: object
+      properties:
+        id:
+          type: string
+          format: uuid
+        name:
+          type: string
+    AuthResponse:
+      type: object
+      properties:
+        success:
+          type: boolean
+        message:
+          type: string
+        data:
+          type: object
+          properties:
+            token:
+              type: string
+            user:
+              $ref: "#/components/schemas/User"
+    SuccessResponse:
+      type: object
+      properties:
+        success:
+          type: boolean
+        message:
+          type: string
+        data:
+          type: object
+    ErrorResponse:
+      type: object
+      properties:
+        success:
+          type: boolean
+          default: false
+        message:
+          type: string
+
+security:
+  - bearerAuth: []
+
+paths:
+  /auth/login:
+    post:
+      tags:
+        - Auth
+      summary: Login user
+      security: []
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              type: object
+              required:
+                - empId
+                - password
+              properties:
+                empId:
+                  type: string
+                password:
+                  type: string
+      responses:
+        "200":
+          description: Login successful
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/AuthResponse"
+        "401":
+          description: Invalid credentials
+
+  /auth/register:
+    post:
+      tags:
+        - Auth
+      summary: Register new user (EVALUATOR or EVALUATEE)
+      security: []
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              type: object
+              required:
+                - empId
+                - name
+                - departmentId
+                - role
+                - email
+                - password
+              properties:
+                empId:
+                  type: string
+                name:
+                  type: string
+                departmentId:
+                  type: string
+                role:
+                  type: string
+                  enum: [EVALUATOR, EVALUATEE]
+                email:
+                  type: string
+                  format: email
+                password:
+                  type: string
+      responses:
+        "201":
+          description: Registration successful
+
+  /admin/users:
+    get:
+      tags:
+        - Admin
+      summary: Get all users
+      responses:
+        "200":
+          description: Successful operation
+          content:
+            application/json:
+              schema:
+                type: object
+                properties:
+                  success:
+                    type: boolean
+                  message:
+                    type: string
+                  data:
+                    type: array
+                    items:
+                      $ref: "#/components/schemas/User"
+
+  /admin/evaluations:
+    post:
+      tags:
+        - Admin (Evaluations)
+      summary: Create evaluation period
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              type: object
+              required:
+                - name
+                - startDate
+                - endDate
+              properties:
+                name:
+                  type: string
+                startDate:
+                  type: string
+                  format: date-time
+                endDate:
+                  type: string
+                  format: date-time
+      responses:
+        "201":
+          description: Created
+    get:
+      tags:
+        - Admin (Evaluations)
+      summary: Get all evaluations
+      responses:
+        "200":
+          description: Successful operation
+          content:
+            application/json:
+              schema:
+                type: object
+                properties:
+                  success:
+                    type: boolean
+                  data:
+                    type: array
+                    items:
+                      $ref: "#/components/schemas/Evaluation"
+
+  /admin/evaluations/{id}:
+    get:
+      tags:
+        - Admin (Evaluations)
+      summary: Get evaluation by ID
+      parameters:
+        - in: path
+          name: id
+          required: true
+          schema:
+            type: string
+      responses:
+        "200":
+          description: Successful operation
+    put:
+      tags:
+        - Admin (Evaluations)
+      summary: Update evaluation
+      parameters:
+        - in: path
+          name: id
+          required: true
+          schema:
+            type: string
+      requestBody:
+        content:
+          application/json:
+            schema:
+              type: object
+              properties:
+                name:
+                  type: string
+                startDate:
+                  type: string
+                  format: date-time
+                endDate:
+                  type: string
+                  format: date-time
+                status:
+                  type: string
+                  enum: [DRAFT, OPEN, CLOSED]
+      responses:
+        "200":
+          description: Updated successfully
+    delete:
+      tags:
+        - Admin (Evaluations)
+      summary: Delete evaluation
+      parameters:
+        - in: path
+          name: id
+          required: true
+          schema:
+            type: string
+      responses:
+        "200":
+          description: Deleted successfully
+
+  /admin/topics:
+    post:
+      tags:
+        - Admin (Topics)
+      summary: Create topic
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              type: object
+              required:
+                - evaluationId
+                - name
+                - description
+              properties:
+                evaluationId:
+                  type: string
+                name:
+                  type: string
+                description:
+                  type: string
+      responses:
+        "201":
+          description: Created
+    get:
+      tags:
+        - Admin (Topics)
+      summary: Get topics
+      parameters:
+        - in: query
+          name: evaluationId
+          schema:
+            type: string
+      responses:
+        "200":
+          description: Successful operation
+
+  /admin/topics/{id}:
+    put:
+      tags:
+        - Admin (Topics)
+      summary: Update topic
+      parameters:
+        - in: path
+          name: id
+          required: true
+          schema:
+            type: string
+      requestBody:
+        content:
+          application/json:
+            schema:
+              type: object
+              properties:
+                name:
+                  type: string
+                description:
+                  type: string
+      responses:
+        "200":
+          description: Updated
+    delete:
+      tags:
+        - Admin (Topics)
+      summary: Delete topic
+      parameters:
+        - in: path
+          name: id
+          required: true
+          schema:
+            type: string
+      responses:
+        "200":
+          description: Deleted
+
+  /admin/indicators:
+    post:
+      tags:
+        - Admin (Indicators)
+      summary: Create indicator
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              type: object
+              required:
+                - topicId
+                - name
+                - description
+                - indicatorType
+                - requireEvidence
+                - weight
+              properties:
+                topicId:
+                  type: string
+                name:
+                  type: string
+                description:
+                  type: string
+                indicatorType:
+                  type: string
+                  enum: [SCALE_1_4, YES_NO]
+                requireEvidence:
+                  type: boolean
+                weight:
+                  type: number
+      responses:
+        "201":
+          description: Created
+    get:
+      tags:
+        - Admin (Indicators)
+      summary: Get indicators
+      parameters:
+        - in: query
+          name: topicId
+          schema:
+            type: string
+      responses:
+        "200":
+          description: Successful operation
+
+  /admin/indicators/{id}:
+    put:
+      tags:
+        - Admin (Indicators)
+      summary: Update indicator
+      parameters:
+        - in: path
+          name: id
+          required: true
+          schema:
+            type: string
+      requestBody:
+        content:
+          application/json:
+            schema:
+              type: object
+              properties:
+                name:
+                  type: string
+                description:
+                  type: string
+                indicatorType:
+                  type: string
+                  enum: [SCALE_1_4, YES_NO]
+                requireEvidence:
+                  type: boolean
+                weight:
+                  type: number
+      responses:
+        "200":
+          description: Updated
+    delete:
+      tags:
+        - Admin (Indicators)
+      summary: Delete indicator
+      parameters:
+        - in: path
+          name: id
+          required: true
+          schema:
+            type: string
+      responses:
+        "200":
+          description: Deleted
+
+  /admin/assignments:
+    post:
+      tags:
+        - Admin (Assignments)
+      summary: Create assignment
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              type: object
+              required:
+                - evaluationId
+                - evaluatorId
+                - evaluateeId
+              properties:
+                evaluationId:
+                  type: string
+                evaluatorId:
+                  type: string
+                evaluateeId:
+                  type: string
+      responses:
+        "201":
+          description: Created
+    get:
+      tags:
+        - Admin (Assignments)
+      summary: Get assignments
+      parameters:
+        - in: query
+          name: evaluationId
+          schema:
+            type: string
+      responses:
+        "200":
+          description: Successful
+
+  /admin/assignments/{id}:
+    delete:
+      tags:
+        - Admin (Assignments)
+      summary: Delete assignment
+      parameters:
+        - in: path
+          name: id
+          required: true
+          schema:
+            type: string
+      responses:
+        "200":
+          description: Deleted
+
+  /evaluator/assignments:
+    get:
+      tags:
+        - Evaluator
+      summary: Get assigned evaluations
+      parameters:
+        - in: query
+          name: evaluationId
+          schema:
+            type: string
+      responses:
+        "200":
+          description: Successful operation
+
+  /evaluator/assignments/{id}:
+    get:
+      tags:
+        - Evaluator
+      summary: Get assignment by ID
+      parameters:
+        - in: path
+          name: id
+          required: true
+          schema:
+            type: string
+      responses:
+        "200":
+          description: Successful
+
+  /evaluator/results:
+    post:
+      tags:
+        - Evaluator
+      summary: Submit evaluation results
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              type: object
+              required:
+                - assignmentId
+                - scores
+              properties:
+                assignmentId:
+                  type: string
+                scores:
+                  type: array
+                  items:
+                    type: object
+                    properties:
+                      indicatorId:
+                        type: string
+                      score:
+                        type: number
+      responses:
+        "201":
+          description: Results submitted
+
+  /me/dashboard:
+    get:
+      tags:
+        - Me
+      summary: Get user dashboard stats
+      responses:
+        "200":
+          description: Successful
+          content:
+            application/json:
+              schema:
+                type: object
+                properties:
+                  success:
+                    type: boolean
+                  data:
+                    type: object
+                    description: Stats depend on role (ADMIN, EVALUATOR, EVALUATEE)
+
+  /me/evaluations:
+    get:
+      tags:
+        - Me
+      summary: Get evaluations for current user (evaluatee)
+      responses:
+        "200":
+          description: Successful operation
+
+  /me/evidence:
+    post:
+      tags:
+        - Me (Evidence)
+      summary: Upload evidence document
+      requestBody:
+        required: true
+        content:
+          multipart/form-data:
+            schema:
+              type: object
+              required:
+                - indicatorId
+                - document
+              properties:
+                indicatorId:
+                  type: string
+                document:
+                  type: string
+                  format: binary
+      responses:
+        "201":
+          description: Uploaded successfully
+    get:
+      tags:
+        - Me (Evidence)
+      summary: Get uploaded evidences
+      parameters:
+        - in: query
+          name: indicatorId
+          schema:
+            type: string
+      responses:
+        "200":
+          description: Successful
+
+  /me/evidence/{id}:
+    delete:
+      tags:
+        - Me (Evidence)
+      summary: Delete evidence
+      parameters:
+        - in: path
+          name: id
+          required: true
+          schema:
+            type: string
+      responses:
+        "200":
+          description: Deleted
+
+  /departments:
+    get:
+      tags:
+        - Departments
+      summary: Get all departments
+      security: []
+      responses:
+        "200":
+          description: Successful operation
+          content:
+            application/json:
+              schema:
+                type: object
+                properties:
+                  success:
+                    type: boolean
+                  data:
+                    type: array
+                    items:
+                      $ref: "#/components/schemas/Department"
+
+  /reports/evaluation/{evaluationId}/result:
+    get:
+      tags:
+        - Reports
+      summary: Get evaluation result report with adjusted scores
+      parameters:
+        - in: path
+          name: evaluationId
+          required: true
+          schema:
+            type: string
+      responses:
+        "200":
+          description: Successful operation
